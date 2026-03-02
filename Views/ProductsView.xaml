@@ -1,0 +1,150 @@
+<UserControl x:Class="CateringIS.Views.ProductsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:helpers="clr-namespace:CateringIS.Helpers">
+    <Grid Margin="16">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" MinWidth="320"/>
+            <ColumnDefinition Width="420"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ─── Left: product list ───────────────────────────────────────── -->
+        <DockPanel Grid.Column="0" Margin="0,0,12,0">
+            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                <Button Content="+ Добавить"  Command="{Binding AddCommand}"    Style="{StaticResource ActionBtn}"/>
+                <Button Content="🗑 Удалить"  Command="{Binding DeleteCommand}" Style="{StaticResource DangerBtn}"/>
+                <Button Content="💾 Сохранить" Command="{Binding SaveCommand}"   Style="{StaticResource SecondaryBtn}"/>
+            </StackPanel>
+            <DataGrid ItemsSource="{Binding Products}" SelectedItem="{Binding Selected}" IsReadOnly="True">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Блюдо"   Binding="{Binding Name}"       Width="*"/>
+                    <DataGridTextColumn Header="Группа"  Binding="{Binding Group.Name}" Width="130"/>
+                    <DataGridTextColumn Header="Цена"    Binding="{Binding Cost}"       Width="80"/>
+                    <DataGridTextColumn Header="Выход"   Binding="{Binding Yield}"      Width="90"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </DockPanel>
+
+        <!-- ─── Right: detail / edit panel ─────────────────────────────── -->
+        <Border Grid.Column="1" Background="White" CornerRadius="6"
+                BorderBrush="#DEE2E6" BorderThickness="1" Padding="0"
+                Visibility="{Binding IsEditing, Converter={StaticResource BoolToVis}}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="16">
+                    <TextBlock Text="Карточка блюда" FontWeight="Bold" FontSize="15" Margin="0,0,0,12"/>
+
+                    <!-- Photo -->
+                    <Grid Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Border Grid.Column="0"
+        Height="220"
+        Background="#ECF0F1"
+        CornerRadius="6"
+        Margin="0,0,8,0"
+        ClipToBounds="True">
+
+    <Image Source="{Binding Selected.PhotoPath, Converter={StaticResource PathToImg}}"
+           Stretch="Uniform"
+           RenderOptions.BitmapScalingMode="HighQuality"/>
+</Border>
+                        <Button Grid.Column="1" Content="📷 Фото" VerticalAlignment="Bottom"
+                                Command="{Binding BrowsePhotoCommand}" Style="{StaticResource SecondaryBtn}"/>
+                    </Grid>
+
+                    <Label Content="Название блюда"/>
+                    <TextBox>
+                        <TextBox.Text>
+                            <Binding Path="Selected.Name" UpdateSourceTrigger="PropertyChanged">
+                                <Binding.ValidationRules>
+                                    <helpers:NameValidationRule/>
+                                </Binding.ValidationRules>
+                            </Binding>
+                        </TextBox.Text>
+                    </TextBox>
+
+                    <Label Content="Группа"/>
+                    <ComboBox ItemsSource="{Binding Groups}" SelectedItem="{Binding Selected.Group}"
+                              DisplayMemberPath="Name" Padding="4,3" Margin="0,2"/>
+
+                    <Label Content="Цена (руб.)"/>
+                    <TextBox>
+                        <TextBox.Text>
+                            <Binding Path="Selected.Cost" UpdateSourceTrigger="PropertyChanged">
+                                <Binding.ValidationRules>
+                                    <helpers:PositiveNumberValidationRule AllowZero="False" FieldName="Цена"/>
+                                </Binding.ValidationRules>
+                            </Binding>
+                        </TextBox.Text>
+                    </TextBox>
+
+                    <Label Content="Выход (порция / г / мл и т.д.)"/>
+                    <TextBox>
+                        <TextBox.Text>
+                            <Binding Path="Selected.Yield" UpdateSourceTrigger="PropertyChanged">
+                                <Binding.ValidationRules>
+                                    <helpers:YieldValidationRule/>
+                                </Binding.ValidationRules>
+                            </Binding>
+                        </TextBox.Text>
+                    </TextBox>
+
+                    <Label Content="Краткое описание технологии приготовления"/>
+                    <TextBox Text="{Binding Selected.PreparationDescription, UpdateSourceTrigger=PropertyChanged}"
+                             TextWrapping="Wrap" MinLines="3" MaxLines="6" AcceptsReturn="True"/>
+
+                    <!-- Recipe -->
+                    <Border Background="#F8F9FA" CornerRadius="4" Margin="0,12,0,0" Padding="8">
+                        <StackPanel>
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Left" Text="Рецептура" FontWeight="Bold" FontSize="13" VerticalAlignment="Center"/>
+                                <Button DockPanel.Dock="Right" Content="+ Ингредиент"
+                                        Command="{Binding AddRecipeItemCommand}"
+                                        Style="{StaticResource ActionBtn}" Padding="8,4"/>
+                            </DockPanel>
+                            <DataGrid ItemsSource="{Binding RecipeItems}" Margin="0,6,0,0"
+                                      CanUserAddRows="False" AutoGenerateColumns="False">
+                                <DataGrid.Columns>
+                                    <DataGridTemplateColumn Header="Ингредиент" Width="*">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Text="{Binding IngredientName}" Padding="4,2"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                        <DataGridTemplateColumn.CellEditingTemplate>
+                                            <DataTemplate>
+                                                <ComboBox ItemsSource="{Binding DataContext.Ingredients,
+                                                              RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                          SelectedValue="{Binding IngredientId, UpdateSourceTrigger=PropertyChanged}"
+                                                          SelectedValuePath="Id"
+                                                          DisplayMemberPath="Name"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellEditingTemplate>
+                                    </DataGridTemplateColumn>
+                                    <DataGridTextColumn Header="Брутто (г)"  Binding="{Binding GrossWeight}" Width="80"/>
+                                    <DataGridTextColumn Header="Нетто (г)"   Binding="{Binding NetWeight}"   Width="80"/>
+                                    <DataGridTemplateColumn Header="" Width="30">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Button Content="✕" Background="Transparent" BorderThickness="0"
+                                                        Foreground="#E74C3C" FontWeight="Bold" Cursor="Hand"
+                                                        Command="{Binding DataContext.RemoveRecipeItemCommand,
+                                                            RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                        CommandParameter="{Binding}"/>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </StackPanel>
+                    </Border>
+
+                    <Button Content="💾 Сохранить карточку" Click="SaveButton_Click"
+                            Style="{StaticResource SecondaryBtn}" Margin="0,12,0,0"/>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+    </Grid>
+</UserControl>
